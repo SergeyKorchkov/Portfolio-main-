@@ -1,41 +1,61 @@
 <?php
-  /**
-  * Requires the "PHP Email Form" library
-  * The "PHP Email Form" library is available only in the pro version of the template
-  * The library should be uploaded to: vendor/php-email-form/php-email-form.php
-  * For more info and help: https://bootstrapmade.com/php-email-form/
-  */
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-  // Replace contact@example.com with your real receiving email address
-  $receiving_email_address = 'contact@example.com';
+require __DIR__ . '/../vendor/autoload.php';
 
-  if( file_exists($php_email_form = '../assets/vendor/php-email-form/php-email-form.php' )) {
-    include( $php_email_form );
-  } else {
-    die( 'Unable to load the "PHP Email Form" Library!');
-  }
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = htmlspecialchars($_POST["name"]);
+    $email = htmlspecialchars($_POST["email"]);
+    $subject = htmlspecialchars($_POST["subject"]);
+    $message = htmlspecialchars($_POST["message"]);
 
-  $contact = new PHP_Email_Form;
-  $contact->ajax = true;
-  
-  $contact->to = $receiving_email_address;
-  $contact->from_name = $_POST['name'];
-  $contact->from_email = $_POST['email'];
-  $contact->subject = $_POST['subject'];
+    $mail = new PHPMailer(true);
 
-  // Uncomment below code if you want to use SMTP to send emails. You need to enter your correct SMTP credentials
-  /*
-  $contact->smtp = array(
-    'host' => 'example.com',
-    'username' => 'example',
-    'password' => 'pass',
-    'port' => '587'
-  );
-  */
+    try {
+        // Включаем отладку SMTP
+        $mail->SMTPDebug = 0; // 2 - для детального вывода, 0 - отключить
+        $mail->Debugoutput = 'html'; // Вывод в HTML
 
-  $contact->add_message( $_POST['name'], 'From');
-  $contact->add_message( $_POST['email'], 'Email');
-  $contact->add_message( $_POST['message'], 'Message', 10);
+        // Настройки SMTP
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com'; // SMTP-сервер Gmail
+        $mail->SMTPAuth = true;
+        $mail->Username = 'korchkov31012007@gmail.com'; // Твой Gmail
+        $mail->Password = 'qsidmepesejqlieq'; // Пароль приложения Google (НЕ обычный пароль)
+        
+        // Шифрование и порт (ПРОБУЙ 587 или 465)
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS; // STARTTLS для 587
+        $mail->Port = 587; // Основной порт
 
-  echo $contact->send();
+        // Отключаем строгую проверку сертификатов SSL
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
+
+        // От кого и кому
+        $mail->setFrom($email, $name);
+        $mail->addAddress('korchkov31012007@gmail.com'); // Куда отправлять письма
+
+        // Контент письма
+        $mail->isHTML(false);
+        $mail->Subject = $subject;
+        $mail->Body = "Name: $name\nEmail: $email\n\nMessage:\n$message";
+
+        // Отправляем письмо
+        if ($mail->send()) {
+            echo "success";
+        } else {
+            echo "error: " . $mail->ErrorInfo;
+        }
+    } catch (Exception $e) {
+        echo "error: " . $mail->ErrorInfo;
+    }
+} else {
+    echo "Invalid request.";
+}
 ?>
